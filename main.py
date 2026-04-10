@@ -1,4 +1,5 @@
 import os
+import base64
 import discord
 from discord.ext import commands
 from discord.ui import Button, View, Modal, TextInput
@@ -12,10 +13,23 @@ missing_vars = [var for var in required_env_vars if not os.getenv(var)]
 if missing_vars:
     raise EnvironmentError(f"Отсутствуют обязательные переменные окружения: {', '.join(missing_vars)}")
 
-# ------------------- НАСТРОЙКИ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ -------------------
+# ------------------- РАБОТА С COOKIES (через base64) -------------------
+cookies_b64 = os.getenv("YOUTUBE_COOKIES_BASE64")
+if cookies_b64:
+    try:
+        with open("cookies.txt", "wb") as f:
+            f.write(base64.b64decode(cookies_b64))
+        print("✅ Cookies успешно загружены из переменной окружения.")
+    except Exception as e:
+        print(f"⚠️ Ошибка при декодировании cookies: {e}")
+        # не прерываем запуск, но бот может не работать
+else:
+    print("⚠️ Переменная YOUTUBE_COOKIES_BASE64 не задана. Бот может столкнуться с ошибками YouTube rate-limit.")
+
+# ------------------- НАСТРОЙКИ -------------------
 TOKEN = os.getenv("DISCORD_TOKEN")
 ALLOWED_CHANNEL_ID = int(os.getenv("ALLOWED_CHANNEL_ID"))
-IDLE_TIMEOUT = int(os.getenv("IDLE_TIMEOUT", "600"))  # по умолчанию 600 секунд
+IDLE_TIMEOUT = int(os.getenv("IDLE_TIMEOUT", "600"))
 
 # Роли для команды !restart (список ID через запятую)
 roles_env = os.getenv("ALLOWED_ROLE_IDS", "")
@@ -30,6 +44,7 @@ YDL_OPTIONS = {
     'sleep_interval': 5,
     'sleep_interval_requests': 1,
     'extractor_retries': 3,
+    'cookiefile': 'cookies.txt',   # используем файл cookies (если существует)
 }
 
 FFMPEG_OPTIONS = {
@@ -37,8 +52,8 @@ FFMPEG_OPTIONS = {
     'options': '-vn -filter:a "volume=0.25"',
 }
 
-queues = {}          # guild_id -> MusicPlayer
-player_panels = {}   # guild_id -> сообщение с панелью
+queues = {}
+player_panels = {}
 bot_instance = None
 
 # ------------------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ -------------------
@@ -469,16 +484,16 @@ async def create_panel(ctx):
 # ------------------- КОМАНДА RESTART (ТОЛЬКО ДЛЯ РОЛЕЙ) -------------------
 @bot.command(name='restart')
 async def restart_bot(ctx):
-    # Проверка прав: роль из ALLOWED_ROLE_IDS или администратор
+    # Проверка прав
     if not ctx.author.guild_permissions.administrator:
         if not ALLOWED_ROLE_IDS:
             await ctx.send("❌ Команда !restart разрешена только администраторам.", ephemeral=True)
             return
         if not any(role.id in ALLOWED_ROLE_IDS for role in ctx.author.roles):
-            await ctx.send("❌ У вас нет прав на использование этой команды (требуется одна из указанных ролей или права администратора).", ephemeral=True)
+            await ctx.send("❌ У вас нет прав на использование этой команды.", ephemeral=True)
             return
 
-    # Очистка всех очередей и отключение от голосовых каналов
+    # Очистка
     for guild_id, player in list(queues.items()):
         try:
             if player.voice_client and player.voice_client.is_connected():
@@ -495,7 +510,6 @@ async def restart_bot(ctx):
     queues.clear()
     player_panels.clear()
 
-    # Пересоздаём панель подключения
     channel = bot.get_channel(ALLOWED_CHANNEL_ID)
     if channel:
         async for msg in channel.history(limit=30):
@@ -521,7 +535,7 @@ async def restart_bot(ctx):
 @restart_bot.error
 async def restart_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
-        await ctx.send("❌ Недостаточно прав (администратор).", ephemeral=True)
+        await ctx.send("❌ Недостаточно прав.", ephemeral=True)
     else:
         await ctx.send(f"❌ Ошибка: {error}")
 
