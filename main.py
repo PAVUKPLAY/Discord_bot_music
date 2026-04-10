@@ -59,7 +59,7 @@ YDL_OPTIONS = {
 
 FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-    'options': '-vn -filter:a "volume=0.25"',
+    'options': '-vn -b:a 96k -bufsize 96k', # <- новые параметры
 }
 
 queues = {}
