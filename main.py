@@ -6,10 +6,6 @@ import yt_dlp as youtube_dl
 import asyncio
 from collections import deque
 
-# ------------------- ДИАГНОСТИКА -------------------
-print("=== Запуск бота ===")
-print(f"Текущая директория: {os.getcwd()}")
-
 # ------------------- ПРОВЕРКА ПЕРЕМЕННЫХ -------------------
 required_env_vars = ["DISCORD_TOKEN", "ALLOWED_CHANNEL_ID"]
 missing_vars = [var for var in required_env_vars if not os.getenv(var)]
@@ -35,16 +31,16 @@ YDL_OPTIONS = {
     'extractor_retries': 3,
     'extractor_args': {
         'youtube': {
-            'player_client': ['android'],           # Рекомендуется для POT
-            'player_client_fallback': False,        # Не использовать fallback
-            'skip': ['hls', 'dash'],                # Ускоряем извлечение
+            'player_client': ['android'],
+            'player_client_fallback': False,
+            'skip': ['hls', 'dash'],
         }
     }
 }
 
 FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-    'options': '-vn -b:a 96k -bufsize 96k',       # Оптимизация для снижения лагов
+    'options': '-vn -b:a 96k -bufsize 96k',
 }
 
 queues = {}
