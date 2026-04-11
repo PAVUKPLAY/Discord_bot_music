@@ -12,19 +12,7 @@ print("=== Запуск бота ===")
 print(f"Текущая директория: {os.getcwd()}")
 print("Список файлов:", os.listdir("."))
 
-# ------------------- ЗАГРУЗКА COOKIES ИЗ ПЕРЕМЕННОЙ ОКРУЖЕНИЯ -------------------
-cookies_b64 = os.getenv("YOUTUBE_COOKIES_BASE64")
-if cookies_b64:
-    try:
-        with open("cookies.txt", "wb") as f:
-            f.write(base64.b64decode(cookies_b64))
-        print(f"✅ Cookies загружены, размер файла: {os.path.getsize('cookies.txt')} байт")
-    except Exception as e:
-        print(f"❌ Ошибка при создании cookies.txt: {e}")
-else:
-    print("⚠️ Переменная YOUTUBE_COOKIES_BASE64 не задана")
-
-# ------------------- ПРОВЕРКА ОБЯЗАТЕЛЬНЫХ ПЕРЕМЕННЫХ -------------------
+# ------------------- ПРОВЕРКА ПЕРЕМЕННЫХ -------------------
 required_env_vars = ["DISCORD_TOKEN", "ALLOWED_CHANNEL_ID"]
 missing_vars = [var for var in required_env_vars if not os.getenv(var)]
 if missing_vars:
@@ -34,11 +22,10 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 ALLOWED_CHANNEL_ID = int(os.getenv("ALLOWED_CHANNEL_ID"))
 IDLE_TIMEOUT = int(os.getenv("IDLE_TIMEOUT", "600"))
 
-# Роли для !restart (через запятую)
 roles_env = os.getenv("ALLOWED_ROLE_IDS", "")
 ALLOWED_ROLE_IDS = [int(r.strip()) for r in roles_env.split(",") if r.strip()]
 
-# ------------------- НАСТРОЙКИ YT-DLP С COOKIES -------------------
+# ------------------- НАСТРОЙКИ YT-DLP С PO TOKEN -------------------
 YDL_OPTIONS = {
     'format': 'bestaudio/best',
     'quiet': True,
@@ -48,18 +35,18 @@ YDL_OPTIONS = {
     'sleep_interval': 5,
     'sleep_interval_requests': 1,
     'extractor_retries': 3,
-    'cookiefile': 'cookies.txt',          # используем cookies, если файл есть
     'extractor_args': {
         'youtube': {
-            'player_client': ['android', 'web'],  # имитация разных клиентов
-            'skip': ['hls', 'dash']               # ускоряем извлечение
+            'player_client': ['android'],           # Рекомендуется для POT
+            'player_client_fallback': False,        # Не использовать fallback
+            'skip': ['hls', 'dash'],                # Ускоряем извлечение
         }
     }
 }
 
 FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-    'options': '-vn -b:a 96k -bufsize 96k', # <- новые параметры
+    'options': '-vn -b:a 96k -bufsize 96k',       # Оптимизация для снижения лагов
 }
 
 queues = {}
