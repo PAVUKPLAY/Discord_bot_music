@@ -1,5 +1,4 @@
 import os
-import base64
 import discord
 from discord.ext import commands
 from discord.ui import Button, View, Modal, TextInput
@@ -10,7 +9,6 @@ from collections import deque
 # ------------------- ДИАГНОСТИКА -------------------
 print("=== Запуск бота ===")
 print(f"Текущая директория: {os.getcwd()}")
-print("Список файлов:", os.listdir("."))
 
 # ------------------- ПРОВЕРКА ПЕРЕМЕННЫХ -------------------
 required_env_vars = ["DISCORD_TOKEN", "ALLOWED_CHANNEL_ID"]
