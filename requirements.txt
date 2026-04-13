@@ -1,4 +1,2 @@
 discord.py[voice]
 yt-dlp
-bgutil-ytdlp-pot-provider
-ffmpeg-python
