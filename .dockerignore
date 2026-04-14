@@ -13,3 +13,4 @@ build
 .git
 .gitignore
 README.md
+data/
