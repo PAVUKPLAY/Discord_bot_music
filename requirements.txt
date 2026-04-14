@@ -1,3 +1,2 @@
 discord.py[voice]==2.3.2
 yt-dlp
-bgutil-ytdlp-pot-provider
