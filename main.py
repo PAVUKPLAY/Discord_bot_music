@@ -49,7 +49,6 @@ FFMPEG_OPTIONS = {
 }
 
 # Указываем путь к FFmpeg (в Docker он обычно в /usr/bin/ffmpeg)
-# Это необязательно, если ffmpeg есть в PATH, но для надёжности:
 discord.FFmpegPCMAudio.executable = "/usr/bin/ffmpeg"
 
 queues = {}
@@ -310,43 +309,43 @@ class ConnectView(View):
         super().__init__(timeout=None)
 
     @discord.ui.button(label="🔊 Подключиться", style=discord.ButtonStyle.green)
-async def connect(self, interaction: discord.Interaction, button: Button):
-    if not interaction.user.voice:
-        await interaction.response.send_message("Вы не в голосовом канале", ephemeral=True)
-        return
-    guild = interaction.guild
-    channel = interaction.user.voice.channel
-    if guild.id in queues and queues[guild.id].voice_client and queues[guild.id].voice_client.is_connected():
-        await interaction.response.send_message("Бот уже в голосовом канале", ephemeral=True)
-        return
+    async def connect(self, interaction: discord.Interaction, button: Button):
+        if not interaction.user.voice:
+            await interaction.response.send_message("Вы не в голосовом канале", ephemeral=True)
+            return
+        guild = interaction.guild
+        channel = interaction.user.voice.channel
+        if guild.id in queues and queues[guild.id].voice_client and queues[guild.id].voice_client.is_connected():
+            await interaction.response.send_message("Бот уже в голосовом канале", ephemeral=True)
+            return
 
-    # Отвечаем сразу, чтобы не истекло взаимодействие
-    await interaction.response.defer(ephemeral=True)
+        # Отвечаем сразу, чтобы не истекло взаимодействие
+        await interaction.response.defer(ephemeral=True)
 
-    try:
-        # Попробуем подключиться с таймаутом и авто-переподключением
-        vc = await asyncio.wait_for(
-            channel.connect(timeout=20, reconnect=True, self_deaf=True),
-            timeout=30
-        )
-    except asyncio.TimeoutError:
-        await interaction.followup.send("❌ Таймаут подключения к голосовому каналу", ephemeral=True)
-        return
-    except Exception as e:
-        await interaction.followup.send(f"❌ Ошибка подключения: {e}", ephemeral=True)
-        return
+        try:
+            # Подключаемся с таймаутом и авто-переподключением
+            vc = await asyncio.wait_for(
+                channel.connect(timeout=20, reconnect=True, self_deaf=True),
+                timeout=30
+            )
+        except asyncio.TimeoutError:
+            await interaction.followup.send("❌ Таймаут подключения к голосовому каналу", ephemeral=True)
+            return
+        except Exception as e:
+            await interaction.followup.send(f"❌ Ошибка подключения: {e}", ephemeral=True)
+            return
 
-    player = MusicPlayer(guild.id, vc)
-    queues[guild.id] = player
-    await interaction.followup.send(f"✅ Подключён к {channel.mention}", ephemeral=True)
+        player = MusicPlayer(guild.id, vc)
+        queues[guild.id] = player
+        await interaction.followup.send(f"✅ Подключён к {channel.mention}", ephemeral=True)
 
-    embed = discord.Embed(title="🎵 Музыкальный плеер", description="*Добавьте музыку кнопкой ниже*", color=discord.Color.purple())
-    embed.add_field(name="Сейчас играет", value="*Ничего*", inline=True)
-    embed.add_field(name="В очереди", value="0", inline=True)
-    embed.add_field(name="Статус", value="Остановлен", inline=True)
-    view = PlayerControlView(guild.id)
-    msg = await interaction.channel.send(embed=embed, view=view)
-    player_panels[guild.id] = msg
+        embed = discord.Embed(title="🎵 Музыкальный плеер", description="*Добавьте музыку кнопкой ниже*", color=discord.Color.purple())
+        embed.add_field(name="Сейчас играет", value="*Ничего*", inline=True)
+        embed.add_field(name="В очереди", value="0", inline=True)
+        embed.add_field(name="Статус", value="Остановлен", inline=True)
+        view = PlayerControlView(guild.id)
+        msg = await interaction.channel.send(embed=embed, view=view)
+        player_panels[guild.id] = msg
 
     @discord.ui.button(label="🔇 Отключиться", style=discord.ButtonStyle.red)
     async def disconnect(self, interaction: discord.Interaction, button: Button):
