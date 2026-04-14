@@ -1,5 +1,4 @@
 import os
-import base64
 import discord
 from discord.ext import commands
 from discord.ui import Button, View, Modal, TextInput
@@ -25,7 +24,7 @@ IDLE_TIMEOUT = int(os.getenv("IDLE_TIMEOUT", "600"))
 roles_env = os.getenv("ALLOWED_ROLE_IDS", "")
 ALLOWED_ROLE_IDS = [int(r.strip()) for r in roles_env.split(",") if r.strip()]
 
-# ------------------- НАСТРОЙКИ YT-DLP С PO TOKEN -------------------
+# ------------------- НАСТРОЙКИ YT-DLP -------------------
 YDL_OPTIONS = {
     'format': 'bestaudio/best',
     'quiet': True,
@@ -37,17 +36,21 @@ YDL_OPTIONS = {
     'extractor_retries': 3,
     'extractor_args': {
         'youtube': {
-            'player_client': ['android'],           # Рекомендуется для POT
-            'player_client_fallback': False,        # Не использовать fallback
-            'skip': ['hls', 'dash'],                # Ускоряем извлечение
+            'player_client': ['android'],
+            'player_client_fallback': False,
+            'skip': ['hls', 'dash'],
         }
     }
 }
 
 FFMPEG_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-    'options': '-vn -b:a 96k -bufsize 96k',       # Оптимизация для снижения лагов
+    'options': '-vn -b:a 96k -bufsize 96k',
 }
+
+# Указываем путь к FFmpeg (в Docker он обычно в /usr/bin/ffmpeg)
+# Это необязательно, если ffmpeg есть в PATH, но для надёжности:
+discord.FFmpegPCMAudio.executable = "/usr/bin/ffmpeg"
 
 queues = {}
 player_panels = {}
